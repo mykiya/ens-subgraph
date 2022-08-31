@@ -24,7 +24,7 @@ const BIG_INT_ZERO = BigInt.fromI32(0)
 
 function createDomain(node: string, timestamp: BigInt): Domain {
   let domain = new Domain(node)
-  if(node == ROOT_NODE) {
+  if (node == ROOT_NODE) {
     domain = new Domain(node)
     domain.owner = EMPTY_ADDRESS
     domain.isMigrated = true
@@ -36,14 +36,14 @@ function createDomain(node: string, timestamp: BigInt): Domain {
 
 function getDomain(node: string, timestamp: BigInt = BIG_INT_ZERO): Domain | null {
   let domain = Domain.load(node)
-  if(domain === null && node == ROOT_NODE) {
+  if (domain === null && node == ROOT_NODE) {
     return createDomain(node, timestamp)
-  }else{
+  } else {
     return domain
   }
 }
 
-function makeSubnode(event:NewOwnerEvent): string {
+function makeSubnode(event: NewOwnerEvent): string {
   return crypto.keccak256(concat(event.params.node, event.params.label)).toHexString()
 }
 
@@ -92,23 +92,25 @@ function _handleNewOwner(event: NewOwnerEvent, isMigrated: boolean): void {
     parent.save()
   }
 
-  if(domain.name == null) {
+  if (domain.name == null) {
     // Get label and node names
     let label = ens.nameByHash(event.params.label.toHexString())
     if (label != null) {
       domain.labelName = label
     }
 
-    if(label === null) {
+    if (label === null) {
       label = '[' + event.params.label.toHexString().slice(2) + ']'
     }
-    if(event.params.node.toHexString() == '0x0000000000000000000000000000000000000000000000000000000000000000') {
+    if (event.params.node.toHexString() == '0x0000000000000000000000000000000000000000000000000000000000000000') {
       domain.name = label
     } else {
-      parent = parent!
-      let name = parent.name
-      if (label && name ) {
-        domain.name = label + '.'  + name
+      if (parent != null) {
+        parent = parent!
+        let name = parent.name
+        if (label && name) {
+          domain.name = label + '.' + name
+        }
       }
     }
   }
@@ -158,7 +160,7 @@ export function handleNewResolver(event: NewResolverEvent): void {
   domain.resolver = id
 
   let resolver = Resolver.load(id)
-  if(resolver == null) {
+  if (resolver == null) {
     resolver = new Resolver(id)
     resolver.domain = event.params.node.toHexString()
     resolver.address = event.params.resolver
@@ -203,7 +205,7 @@ export function handleNewOwnerOldRegistry(event: NewOwnerEvent): void {
   let subnode = makeSubnode(event)
   let domain = getDomain(subnode)
 
-  if(domain == null || domain.isMigrated == false){
+  if (domain == null || domain.isMigrated == false) {
     _handleNewOwner(event, false)
   }
 }
@@ -211,20 +213,20 @@ export function handleNewOwnerOldRegistry(event: NewOwnerEvent): void {
 export function handleNewResolverOldRegistry(event: NewResolverEvent): void {
   let node = event.params.node.toHexString()
   let domain = getDomain(node, event.block.timestamp)!
-  if(node == ROOT_NODE || !domain.isMigrated){
+  if (node == ROOT_NODE || !domain.isMigrated) {
     handleNewResolver(event)
   }
 }
 export function handleNewTTLOldRegistry(event: NewTTLEvent): void {
   let domain = getDomain(event.params.node.toHexString())!
-  if(domain.isMigrated == false){
+  if (domain.isMigrated == false) {
     handleNewTTL(event)
   }
 }
 
 export function handleTransferOldRegistry(event: TransferEvent): void {
   let domain = getDomain(event.params.node.toHexString())!
-  if(domain.isMigrated == false){
+  if (domain.isMigrated == false) {
     handleTransfer(event)
   }
 }
